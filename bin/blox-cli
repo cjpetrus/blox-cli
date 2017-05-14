@@ -21,8 +21,10 @@ BLOX_COMMANDS = {'create-deployment': 'blox-create-deployment.py',
                  'increment-cluster': 'increment-cluster-instances.py',
                  'list-deployments': 'blox-list-deployments.py',
                  'list-environments': 'blox-list-environments.py',
-                 'list-tasks': 'css-list-tasks.py',
-                 'list-instances': 'css-list-instances.py',
+                 'list-running-tasks': 'css-list-tasks.py',
+                 'list-running-instances': 'css-list-instances.py',
+                 'list-tasks': 'list-task-definitions.py',
+                 'register-task': 'register-task-definition.py',
                  }
 
 
