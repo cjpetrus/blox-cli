@@ -47,16 +47,28 @@ def load_raw_config(path, **defaults):
 
 
 def run_command(command=None):
+
     os.system(' '.join(command))
 
-
-def get_deployment_id(stack_name='BloxAws'):
+def get_cf_stack_params(stack_name='BloxAws'):
     creds = load_aws_config('blox')
     proc = subprocess.Popen([
-        "aws --region {} cloudformation describe-stack-resource --stack-name {} --logical-resource-id RestApi --query 'StackResourceDetail.PhysicalResourceId' --output text".format(
+        "aws --region {} cloudformation describe-stacks --stack-name {} --output json".format(
             creds.get('region'), stack_name)], stdout=subprocess.PIPE, shell=True)
     (out, err) = proc.communicate()
-    return out
+    tmp = json.loads(out)['Stacks'][0]
+    params = {}
+    for i in tmp['Parameters']:
+        params[i['ParameterKey']] = i['ParameterValue']
+    params['outputs'] = tmp['Outputs']
+    return params
+# def get_deployment_id(stack_name='BloxAws'):
+#     creds = load_aws_config('blox')
+#     proc = subprocess.Popen([
+#         "aws --region {} cloudformation describe-stack-resource --stack-name {} --output json".format(
+#             creds.get('region'), stack_name)], stdout=subprocess.PIPE, shell=True)
+#     (out, err) = proc.communicate()
+#     return out
 
 
 def main(*args, **kwargs):
@@ -68,8 +80,18 @@ def main(*args, **kwargs):
     creds = load_aws_config('blox')
     script_dir = os.path.realpath(os.path.dirname(sys.argv[0])) + "/"
     exec_command = ['python']
+    params = get_cf_stack_params()
+    api_url = params['outputs'][0]['OutputValue']
+    # host = api_url.split("/")[2]
     if action in BLOX_COMMANDS.keys():
         exec_command += [script_dir + BLOX_COMMANDS[action]]
+        if kwargs.get('region'):
+            region = kwargs.get('region')
+        else:
+            region = creds.get('region')
+        exec_command += ["--region {}".format(region)]
+        if 'list-tasks' not in action and 'list-running-tasks' not in action:
+            exec_command += ["--apigateway"]
         exec_command += sys.argv[2:]
         run_command(exec_command)
     else:
@@ -77,6 +99,6 @@ def main(*args, **kwargs):
         return False
 
 if __name__ == "__main__":
-    deployment_id = get_deployment_id().strip().replace(" ", "")
-    main(sys.argv, profile='blox')
+
+    main(sys.argv, profile= 'blox')
 
